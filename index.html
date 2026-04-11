@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whole Coaching Server – Mario Aziz Elite Coaching System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050810;
+  --bg2: #080c18;
+  --card: rgba(255,255,255,0.04);
+  --card-border: rgba(100,120,255,0.18);
+  --blue: #4f6fff;
+  --purple: #a259ff;
+  --cyan: #00d4ff;
+  --text: #e8eaf8;
+  --muted: #7580a8;
+  --r: 18px;
+  --rs: 10px;
+  --fh: 'Syne', sans-serif;
+  --fb: 'DM Sans', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden;line-height:1.6}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+input[type=number]{-moz-appearance:textfield}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(79,111,255,.3);border-radius:3px}
+
+/* ══ PARTICLES ══ */
+#pcanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.45}
+.mesh{position:fixed;inset:0;z-index:0;background:
+  radial-gradient(ellipse 80% 60% at 20% 10%,rgba(79,111,255,.12) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 50% at 80% 80%,rgba(162,89,255,.10) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 60% 30%,rgba(0,212,255,.06) 0%,transparent 60%);
+  animation:meshF 12s ease-in-out infinite alternate;pointer-events:none}
+@keyframes meshF{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.05) translate(-2%,-1%)}}
+
+/* ══ LOCK SCREEN ══ */
+#lockscreen{
+  position:fixed;inset:0;z-index:9999;
+  background:radial-gradient(ellipse 120% 100% at 50% 0%,rgba(79,111,255,.18) 0%,transparent 60%),
+             radial-gradient(ellipse 80% 80% at 80% 100%,rgba(162,89,255,.14) 0%,transparent 60%),
+             #050810;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.lock-card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(79,111,255,.3);
+  border-radius:24px;
+  padding:48px 40px;
+  width:100%;max-width:420px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  text-align:center;
+  animation:fadeUp .8s cubic-bezier(.16,1,.3,1) both;
+  box-shadow:0 0 80px rgba(79,111,255,.1);
+}
+.lock-icon{
+  width:70px;height:70px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(79,111,255,.3),rgba(162,89,255,.3));
+  border:1px solid rgba(162,89,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin:0 auto 24px;
+  box-shadow:0 0 40px rgba(162,89,255,.3);
+  animation:lockPulse 3s ease-in-out infinite;
+}
+@keyframes lockPulse{0%,100%{box-shadow:0 0 30px rgba(162,89,255,.25)}50%{box-shadow:0 0 60px rgba(162,89,255,.5)}}
+.lock-title{font-family:var(--fh);font-size:1.6rem;font-weight:800;margin-bottom:8px}
+.lock-sub{color:var(--muted);font-size:.88rem;margin-bottom:28px}
+.lock-input-wrap{position:relative;margin-bottom:14px}
+.lock-input{
+  width:100%;padding:14px 48px 14px 18px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  color:var(--text);font-family:var(--fb);font-size:1.1rem;
+  letter-spacing:.25em;text-align:center;outline:none;
+  transition:border-color .25s,background .25s;
+}
+.lock-input:focus{border-color:var(--blue);background:rgba(79,111,255,.08)}
+.lock-input.error{border-color:#ff4646;background:rgba(255,70,70,.08);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.lock-err{color:#ff6b6b;font-size:.8rem;min-height:20px;margin-bottom:10px;opacity:0;transition:opacity .3s}
+.lock-err.show{opacity:1}
+.lock-btn{
+  width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;font-family:var(--fh);font-size:.95rem;font-weight:700;
+  letter-spacing:.04em;transition:transform .25s,box-shadow .25s;
+  box-shadow:0 6px 28px rgba(79,111,255,.3);
+}
+.lock-btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(79,111,255,.5)}
+.lock-btn:active{transform:scale(.97)}
+
+/* ══ MAIN ══ */
+#main{position:relative;z-index:1;display:none;opacity:0;transition:opacity .6s}
+#main.visible{display:block;opacity:1}
+.wrapper{max-width:1360px;margin:0 auto;padding:0 24px 80px}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:80px 20px 56px;animation:fadeUp .9s cubic-bezier(.16,1,.3,1) both}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(79,111,255,.12);border:1px solid rgba(79,111,255,.3);border-radius:50px;padding:6px 18px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:24px}
+.hero-badge span{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.hero h1{font-family:var(--fh);font-size:clamp(2.6rem,6vw,5rem);font-weight:800;line-height:1.04;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 30%,var(--blue) 60%,var(--purple) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px}
+.hero-sub{font-family:var(--fh);font-size:clamp(.95rem,2vw,1.25rem);font-weight:600;color:var(--cyan);letter-spacing:.04em;margin-bottom:14px}
+.hero-desc{max-width:560px;margin:0 auto;color:var(--muted);font-size:.92rem;font-weight:300}
+.hero-line{width:72px;height:2px;background:linear-gradient(90deg,var(--blue),var(--purple));margin:24px auto 0;border-radius:2px}
+
+/* ── GRID ── */
+.main-grid{display:grid;grid-template-columns:1fr 360px;gap:26px;align-items:start}
+@media(max-width:1040px){.main-grid{grid-template-columns:1fr}}
+
+/* ── SECTION TITLES ── */
+.sec-label{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
+.sec-title{font-family:var(--fh);font-size:clamp(1.3rem,2.5vw,1.8rem);font-weight:800;margin-bottom:22px}
+
+/* ── TOOLS GRID ── */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+
+/* ── GLASS CARD ── */
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--r);padding:22px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:transform .3s,border-color .3s,box-shadow .3s;animation:fadeUp .7s cubic-bezier(.16,1,.3,1) both}
+.card:hover{transform:translateY(-4px);border-color:rgba(79,111,255,.4);box-shadow:0 16px 48px rgba(79,111,255,.12)}
+.card:nth-child(1){animation-delay:.08s}.card:nth-child(2){animation-delay:.14s}.card:nth-child(3){animation-delay:.20s}.card:nth-child(4){animation-delay:.26s}.card:nth-child(5){animation-delay:.32s}.card:nth-child(6){animation-delay:.38s}.card:nth-child(7){animation-delay:.44s}.card:nth-child(8){animation-delay:.50s}.card:nth-child(9){animation-delay:.56s}
+.card-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:12px;background:linear-gradient(135deg,rgba(79,111,255,.2),rgba(162,89,255,.2));border:1px solid rgba(79,111,255,.25)}
+.card-title{font-family:var(--fh);font-size:.92rem;font-weight:700;margin-bottom:14px}
+
+/* ── FORM ── */
+.fg{margin-bottom:11px}
+.fg label{display:block;font-size:.7rem;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+input[type=number],select{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--rs);padding:8px 12px;color:var(--text);font-family:var(--fb);font-size:.88rem;outline:none;transition:border-color .25s,background .25s;-webkit-appearance:none;appearance:none}
+input[type=number]:focus,select:focus{border-color:var(--blue);background:rgba(79,111,255,.08)}
+select option{background:#0d1225;color:var(--text)}
+
+/* gender radio */
+.rg{display:flex;gap:8px;margin-bottom:11px}
+.rl{flex:1;text-align:center;padding:7px 4px;border-radius:var(--rs);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:.8rem;font-weight:600;transition:all .25s;color:var(--muted);background:rgba(255,255,255,.03);user-select:none}
+.rl.active{border-color:var(--blue);background:rgba(79,111,255,.15);color:#fff}
+
+/* ── RESULT BOX ── */
+.rb{margin-top:12px;background:rgba(79,111,255,.07);border:1px solid rgba(79,111,255,.18);border-radius:var(--rs);padding:11px 13px;min-height:46px}
+.rr{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.rr:last-child{margin-bottom:0}
+.rl2{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.rv{font-family:var(--fh);font-size:1.05rem;font-weight:700;background:linear-gradient(90deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.re{color:var(--muted);font-size:.8rem;font-style:italic}
+
+/* macro grid */
+.macro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.macro-item{background:rgba(79,111,255,.07);border:1px solid rgba(79,111,255,.18);border-radius:var(--rs);padding:10px 8px;text-align:center}
+.macro-val{font-family:var(--fh);font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.macro-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.macro-kcal{font-size:.65rem;color:var(--muted)}
+
+/* BF bar */
+.bf-bar-wrap{margin-top:12px}
+.bf-bar-track{height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden;margin:6px 0}
+.bf-bar-fill{height:100%;border-radius:5px;transition:width .6s cubic-bezier(.16,1,.3,1),background .6s;background:linear-gradient(90deg,var(--blue),var(--purple))}
+.bf-labels{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted)}
+
+/* badges */
+.badge{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:50px;margin-left:6px;vertical-align:middle}
+.b-green{background:rgba(0,220,120,.15);color:#00dc78;border:1px solid rgba(0,220,120,.3)}
+.b-blue{background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3)}
+.b-yellow{background:rgba(255,180,0,.15);color:#ffb400;border:1px solid rgba(255,180,0,.3)}
+.b-red{background:rgba(255,70,70,.15);color:#ff4646;border:1px solid rgba(255,70,70,.3)}
+.b-purple{background:rgba(162,89,255,.15);color:#a259ff;border:1px solid rgba(162,89,255,.3)}
+.b-orange{background:rgba(255,120,0,.15);color:#ff7800;border:1px solid rgba(255,120,0,.3)}
+
+/* strategy box */
+.strategy-box{margin-top:12px;border-radius:var(--rs);padding:12px 14px;background:rgba(79,111,255,.07);border:1px solid rgba(79,111,255,.2)}
+.strategy-tag{font-family:var(--fh);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.strategy-note{font-size:.78rem;color:var(--muted)}
+.strategy-warn{font-size:.76rem;color:#ffb400;margin-top:5px;font-style:italic}
+
+/* ── STOPWATCH ── */
+.sw-display{font-family:var(--fh);font-size:2.2rem;font-weight:800;text-align:center;letter-spacing:.04em;padding:16px 0 12px;background:linear-gradient(135deg,#fff 40%,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.sw-btns{display:flex;gap:8px;justify-content:center;margin-top:4px}
+.swb{flex:1;padding:8px 6px;border-radius:var(--rs);border:none;cursor:pointer;font-family:var(--fb);font-size:.8rem;font-weight:600;letter-spacing:.04em;transition:transform .2s,opacity .2s}
+.swb:hover{opacity:.85;transform:translateY(-1px)}
+.swb:active{transform:scale(.95)}
+.swb-s{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff}
+.swb-p{background:rgba(255,255,255,.08);color:var(--text);border:1px solid rgba(255,255,255,.12)}
+.swb-r{background:rgba(255,70,70,.12);color:#ff6b6b;border:1px solid rgba(255,70,70,.2)}
+
+/* ── RIGHT PANEL ── */
+.coaching-panel{position:sticky;top:24px}
+.coaching-card{background:linear-gradient(145deg,rgba(79,111,255,.08),rgba(162,89,255,.06));border:1px solid rgba(162,89,255,.25);border-radius:var(--r);padding:26px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:fadeUp .6s .3s cubic-bezier(.16,1,.3,1) both}
+.coach-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;box-shadow:0 0 30px rgba(162,89,255,.4)}
+.coaching-card h2{font-family:var(--fh);font-size:1.4rem;font-weight:800;margin-bottom:7px}
+.coaching-card>p{color:var(--muted);font-size:.84rem;margin-bottom:24px;line-height:1.65}
+.cta-btn{display:flex;align-items:center;gap:11px;width:100%;padding:13px 16px;border-radius:11px;border:none;cursor:pointer;font-family:var(--fb);font-size:.88rem;font-weight:600;text-decoration:none;margin-bottom:11px;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;position:relative;overflow:hidden}
+.cta-btn::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.07);opacity:0;transition:opacity .25s}
+.cta-btn:hover::before{opacity:1}
+.cta-btn:hover{transform:translateY(-3px) scale(1.01)}
+.cta-btn:last-of-type{margin-bottom:0}
+.cta-1{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;box-shadow:0 6px 28px rgba(79,111,255,.3)}
+.cta-1:hover{box-shadow:0 10px 40px rgba(79,111,255,.5)}
+.cta-2{background:linear-gradient(135deg,rgba(0,212,255,.14),rgba(79,111,255,.14));color:var(--text);border:1px solid rgba(0,212,255,.3)}
+.cta-2:hover{box-shadow:0 6px 28px rgba(0,212,255,.2);border-color:rgba(0,212,255,.6)}
+.cta-3{background:linear-gradient(135deg,rgba(162,89,255,.14),rgba(255,107,157,.14));color:var(--text);border:1px solid rgba(162,89,255,.3)}
+.cta-3:hover{box-shadow:0 6px 28px rgba(162,89,255,.2);border-color:rgba(162,89,255,.6)}
+.cta-4{background:linear-gradient(135deg,rgba(0,220,120,.14),rgba(0,180,255,.14));color:var(--text);border:1px solid rgba(0,220,120,.3)}
+.cta-4:hover{box-shadow:0 6px 28px rgba(0,220,120,.2);border-color:rgba(0,220,120,.6)}
+width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,.12)}
+.cta-txt{flex:1}.cta-txt strong{display:block;font-size:.86rem}.cta-txt span{font-size:.7rem;opacity:.6}
+.cta-arr{font-size:13px;opacity:.55}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(79,111,255,.25),transparent);margin:20px 0}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:18px}
+.stat-item{text-align:center}
+.stat-num{font-family:var(--fh);font-size:1.2rem;font-weight:800;background:linear-gradient(90deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<canvas id="pcanvas"></canvas>
+<div class="mesh"></div>
+
+<!-- ══════════ LOCK SCREEN ══════════ -->
+<div id="lockscreen">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-title">System Access Required</div>
+    <div class="lock-sub">Enter access code to activate coaching system</div>
+    <div class="lock-input-wrap">
+      <input type="password" class="lock-input" id="lockInput" placeholder="• • • •" maxlength="10" autocomplete="off">
+    </div>
+    <div class="lock-err" id="lockErr">Invalid Access Code</div>
+    <button class="lock-btn" onclick="tryUnlock()">Activate Now</button>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="main">
+<div class="wrapper">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge"><span></span> Elite Coaching Platform</div>
+    <h1>Whole Coaching Server</h1>
+    <div class="hero-sub">The complete elite training system by Coach Mario Aziz</div>
+    <p class="hero-desc">Your all-in-one control center for training, tracking, and performance optimization.</p>
+    <div class="hero-line"></div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- ════ LEFT ════ -->
+    <div>
+      <div class="sec-label">Performance Suite</div>
+      <div class="sec-title">Elite Tools System</div>
+      <div class="tools-grid">
+
+        <!-- 1. CALORIES -->
+        <div class="card">
+          <div class="card-icon">🔥</div>
+          <div class="card-title">Mifflin-St Jeor Calories</div>
+          <div class="rg">
+            <div class="rl active" id="gen-m" onclick="setGender('male')">♂ Male</div>
+            <div class="rl" id="gen-f" onclick="setGender('female')">♀ Female</div>
+          </div>
+          <div class="fg"><label>Weight (kg)</label><input type="number" id="cal-w" placeholder="80" min="1" oninput="calcCalories()"></div>
+          <div class="fg"><label>Height (cm)</label><input type="number" id="cal-h" placeholder="175" min="1" oninput="calcCalories()"></div>
+          <div class="fg"><label>Age</label><input type="number" id="cal-a" placeholder="25" min="1" oninput="calcCalories()"></div>
+          <div class="fg"><label>Activity Level</label>
+            <select id="cal-act" onchange="calcCalories()">
+              <option value="1.2">Sedentary</option>
+              <option value="1.375">Light (1–3x/week)</option>
+              <option value="1.55" selected>Moderate (3–5x/week)</option>
+              <option value="1.725">Active (6–7x/week)</option>
+              <option value="1.9">Very Active (2x/day)</option>
+            </select>
+          </div>
+          <div class="rb" id="cal-res"><span class="re">Fill in details to calculate</span></div>
+        </div>
+
+        <!-- 2. BMI -->
+        <div class="card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">BMI Calculator</div>
+          <div class="fg"><label>Weight (kg)</label><input type="number" id="bmi-w" placeholder="75" min="1" oninput="calcBMI()"></div>
+          <div class="fg"><label>Height (cm)</label><input type="number" id="bmi-h" placeholder="175" min="1" oninput="calcBMI()"></div>
+          <div class="rb" id="bmi-res"><span class="re">Enter weight & height</span></div>
+        </div>
+
+        <!-- 3. CALORIES BURNED -->
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Calories Burned</div>
+          <div class="fg"><label>Activity</label>
+            <select id="burn-act" onchange="calcBurn()">
+              <option value="9.8">🏃 Running</option>
+              <option value="3.5">🚶 Walking</option>
+              <option value="7.5">🚴 Cycling</option>
+              <option value="8">🏊 Swimming</option>
+              <option value="6">🏋️ Weight Training</option>
+              <option value="10">💥 HIIT</option>
+            </select>
+          </div>
+          <div class="fg"><label>Duration (min)</label><input type="number" id="burn-d" placeholder="45" min="1" oninput="calcBurn()"></div>
+          <div class="fg"><label>Weight (kg)</label><input type="number" id="burn-w" placeholder="80" min="1" oninput="calcBurn()"></div>
+          <div class="rb" id="burn-res"><span class="re">Fill in details to calculate</span></div>
+        </div>
+
+        <!-- 4. STOPWATCH -->
+        <div class="card">
+          <div class="card-icon">⏱</div>
+          <div class="card-title">Training Stopwatch</div>
+          <div class="sw-display" id="sw-disp">00:00:00</div>
+          <div class="sw-btns">
+            <button class="swb swb-s" id="swb-start" onclick="swStart()">Start</button>
+            <button class="swb swb-p" onclick="swPause()">Pause</button>
+            <button class="swb swb-r" onclick="swReset()">Reset</button>
+          </div>
+        </div>
+
+        <!-- 5. 1RM -->
+        <div class="card">
+          <div class="card-icon">🏆</div>
+          <div class="card-title">One Rep Max (1RM)</div>
+          <div class="fg"><label>Weight Lifted (kg)</label><input type="number" id="orm-w" placeholder="100" min="1" oninput="calcORM()"></div>
+          <div class="fg"><label>Reps Completed</label><input type="number" id="orm-r" placeholder="5" min="1" oninput="calcORM()"></div>
+          <div class="rb" id="orm-res"><span class="re">Enter weight and reps</span></div>
+        </div>
+
+        <!-- 6. MACRO CALCULATOR -->
+        <div class="card">
+          <div class="card-icon">🥗</div>
+          <div class="card-title">Macro Nutrition Calculator</div>
+          <div class="fg"><label>Total Daily Calories</label><input type="number" id="mac-kcal" placeholder="2500" min="800" oninput="calcMacro()"></div>
+          <div class="fg"><label>Goal</label>
+            <select id="mac-goal" onchange="calcMacro()">
+              <option value="cut">Cut (Fat Loss)</option>
+              <option value="maintain" selected>Maintain</option>
+              <option value="bulk">Bulk (Muscle Gain)</option>
+            </select>
+          </div>
+          <div class="fg"><label>Body Weight (kg)</label><input type="number" id="mac-bw" placeholder="80" min="1" oninput="calcMacro()"></div>
+          <div class="fg"><label>Diet Type</label>
+            <select id="mac-diet" onchange="calcMacro()">
+              <option value="balanced">Balanced</option>
+              <option value="lowcarb">Low Carb</option>
+              <option value="carbcycle">Carb Cycling</option>
+              <option value="keto">Keto</option>
+              <option value="highprot">High Protein Mass Gain</option>
+            </select>
+          </div>
+          <div id="mac-res"><span class="re" style="font-size:.8rem;font-style:italic;color:var(--muted)">Fill in details to calculate</span></div>
+        </div>
+
+        <!-- 7. BODY FAT ESTIMATOR -->
+        <div class="card">
+          <div class="card-icon">📐</div>
+          <div class="card-title">Body Fat Estimator</div>
+          <div class="rg">
+            <div class="rl active" id="bf-gm" onclick="setBFGender('male')">♂ Male</div>
+            <div class="rl" id="bf-gf" onclick="setBFGender('female')">♀ Female</div>
+          </div>
+          <div class="fg"><label>Waist (cm)</label><input type="number" id="bf-waist" placeholder="85" min="1" oninput="calcBF()"></div>
+          <div id="bf-hip-row" class="fg" style="display:none"><label>Hip (cm) — Female only</label><input type="number" id="bf-hip" placeholder="95" min="1" oninput="calcBF()"></div>
+          <div class="fg"><label>Neck (cm)</label><input type="number" id="bf-neck" placeholder="38" min="1" oninput="calcBF()"></div>
+          <div class="fg"><label>Height (cm)</label><input type="number" id="bf-ht" placeholder="175" min="1" oninput="calcBF()"></div>
+          <div class="rb" id="bf-res"><span class="re">Fill in all fields</span></div>
+          <div class="bf-bar-wrap" id="bf-bar-wrap" style="display:none">
+            <div class="bf-bar-track"><div class="bf-bar-fill" id="bf-bar" style="width:0%"></div></div>
+            <div class="bf-labels"><span>4%</span><span>15%</span><span>25%</span><span>35%</span><span>45%+</span></div>
+          </div>
+        </div>
+
+        <!-- 8. HYDRATION -->
+        <div class="card">
+          <div class="card-icon">💧</div>
+          <div class="card-title">Hydration Calculator</div>
+          <div class="fg"><label>Weight (kg)</label><input type="number" id="hyd-w" placeholder="80" min="1" oninput="calcHydration()"></div>
+          <div class="fg"><label>Activity Level</label>
+            <select id="hyd-act" onchange="calcHydration()">
+              <option value="0">Low (mostly sedentary)</option>
+              <option value="1" selected>Moderate (light exercise)</option>
+              <option value="2">High (intense training)</option>
+              <option value="3">Extreme (athlete level)</option>
+            </select>
+          </div>
+          <div class="fg"><label>Temperature (°C, optional)</label><input type="number" id="hyd-temp" placeholder="25" oninput="calcHydration()"></div>
+          <div class="rb" id="hyd-res"><span class="re">Enter weight to calculate</span></div>
+        </div>
+
+        <!-- 9. GOAL DECISION ENGINE -->
+        <div class="card">
+          <div class="card-icon">🧠</div>
+          <div class="card-title">Goal Decision Engine</div>
+          <div class="fg"><label>Current Weight (kg)</label><input type="number" id="gde-cw" placeholder="90" min="1" oninput="calcGDE()"></div>
+          <div class="fg"><label>Goal Weight (kg)</label><input type="number" id="gde-gw" placeholder="80" min="1" oninput="calcGDE()"></div>
+          <div class="fg"><label>Time Frame (weeks)</label><input type="number" id="gde-wk" placeholder="12" min="1" oninput="calcGDE()"></div>
+          <div id="gde-res"><span class="re" style="font-size:.8rem;font-style:italic;color:var(--muted)">Enter your goal parameters</span></div>
+        </div>
+
+      </div><!-- /tools-grid -->
+    </div><!-- /left -->
+
+    <!-- ════ RIGHT ════ -->
+    <div class="coaching-panel">
+      <div class="coaching-card">
+        <div class="coach-avatar">🎯</div>
+        <div class="sec-label">Your Coach</div>
+        <h2>Let's Start Coaching</h2>
+        <p>Access Mario Aziz's elite coaching resources — curated systems, prompts, and portals built for peak performance.</p>
+
+        <a href="https://marioaziz1.github.io/Coaching-Server-/" target="_blank" rel="noopener" class="cta-btn cta-1">
+          <div class="cta-ic">🚀</div>
+          <div class="cta-txt"><strong>Mario Aziz Coaching Server</strong><span>Full coaching ecosystem</span></div>
+          <div class="cta-arr">↗</div>
+        </a>
+        <a href="https://marioaziz1.github.io/prompt-library/" target="_blank" rel="noopener" class="cta-btn cta-2">
+          <div class="cta-ic">📚</div>
+          <div class="cta-txt"><strong>Coaching Prompt Library</strong><span>Elite prompt collection</span></div>
+          <div class="cta-arr">↗</div>
+        </a>
+        <a href="https://claude.ai/share/e81fb53b-a5a6-4529-bb7d-8e8426b0087e" target="_blank" rel="noopener" class="cta-btn cta-3">
+          <div class="cta-ic">⚙️</div>
+          <div class="cta-txt"><strong>Portal Creation</strong><span>Build your coaching portal</span></div>
+          <div class="cta-arr">↗</div>
+        </a>
+
+        <a href="https://marioaziz1.github.io/Coaching-EX/" target="_blank" rel="noopener" class="cta-btn cta-4">
+          <div class="cta-ic">🏅</div>
+          <div class="cta-txt"><strong>EX Client</strong><span>Past client results & cases</span></div>
+          <div class="cta-arr">↗</div>
+        </a>
+
+        <div class="divider"></div>
+        <div class="stats-row">
+          <div class="stat-item"><div class="stat-num">9</div><div class="stat-lbl">Tools</div></div>
+          <div class="stat-item"><div class="stat-num">∞</div><div class="stat-lbl">Sessions</div></div>
+          <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Free</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+</div><!-- /wrapper -->
+</div><!-- /main -->
+
+<script>
+/* ══════════════════════════════════
+   PARTICLES
+══════════════════════════════════ */
+(function(){
+  const c=document.getElementById('pcanvas'),ctx=c.getContext('2d');
+  let W,H,P=[];
+  function rs(){W=c.width=innerWidth;H=c.height=innerHeight}
+  rs();window.addEventListener('resize',rs);
+  const r=(a,b)=>Math.random()*(b-a)+a;
+  for(let i=0;i<80;i++)P.push({x:r(0,innerWidth),y:r(0,innerHeight),rad:r(.4,2.2),vx:r(-.22,.22),vy:r(-.28,-.04),a:r(.12,.55)});
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    P.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);
+      ctx.fillStyle=`rgba(100,140,255,${p.a})`;ctx.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.y<-5){p.y=H+5;p.x=r(0,W)}
+      if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ══════════════════════════════════
+   LOCK SCREEN
+══════════════════════════════════ */
+const PASS='0070';
+function tryUnlock(){
+  const v=document.getElementById('lockInput').value.trim();
+  const err=document.getElementById('lockErr');
+  const inp=document.getElementById('lockInput');
+  if(v===PASS){
+    document.getElementById('lockscreen').style.opacity='0';
+    document.getElementById('lockscreen').style.transition='opacity .6s';
+    setTimeout(()=>{
+      document.getElementById('lockscreen').style.display='none';
+      const m=document.getElementById('main');
+      m.style.display='block';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>m.classList.add('visible')));
+    },600);
+  } else {
+    inp.classList.add('error');
+    err.classList.add('show');
+    setTimeout(()=>{inp.classList.remove('error');inp.value='';},500);
+  }
+}
+document.getElementById('lockInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock()});
+
+/* ══════════════════════════════════
+   HELPERS
+══════════════════════════════════ */
+const N=id=>{ const v=parseFloat(document.getElementById(id).value); return (isNaN(v)||v<=0)?null:v; };
+const html=(id,h)=>document.getElementById(id).innerHTML=h;
+const empty=(id,msg)=>html(id,`<span class="re">${msg}</span>`);
+
+/* ══════════════════════════════════
+   1. CALORIES — Mifflin-St Jeor
+══════════════════════════════════ */
+let calGender='male';
+function setGender(g){
+  calGender=g;
+  document.getElementById('gen-m').classList.toggle('active',g==='male');
+  document.getElementById('gen-f').classList.toggle('active',g==='female');
+  calcCalories();
+}
+function calcCalories(){
+  const w=N('cal-w'),h=N('cal-h'),a=N('cal-a');
+  const am=parseFloat(document.getElementById('cal-act').value);
+  if(!w||!h||!a){empty('cal-res','Fill in all fields');return}
+  const bmr=calGender==='male'?10*w+6.25*h-5*a+5:10*w+6.25*h-5*a-161;
+  const maint=bmr*am;
+  html('cal-res',`
+    <div class="rr"><span class="rl2">BMR</span><span class="rv">${Math.round(bmr)} kcal</span></div>
+    <div class="rr"><span class="rl2">Maintenance</span><span class="rv">${Math.round(maint)} kcal</span></div>`);
+}
+
+/* ══════════════════════════════════
+   2. BMI
+══════════════════════════════════ */
+function calcBMI(){
+  const w=N('bmi-w'),hc=N('bmi-h');
+  if(!w||!hc){empty('bmi-res','Enter weight & height');return}
+  const bmi=w/Math.pow(hc/100,2);
+  let cat,cls;
+  if(bmi<18.5){cat='Underweight';cls='b-blue'}
+  else if(bmi<25){cat='Normal';cls='b-green'}
+  else if(bmi<30){cat='Overweight';cls='b-yellow'}
+  else{cat='Obese';cls='b-red'}
+  html('bmi-res',`<div class="rr"><span class="rl2">BMI</span><span class="rv">${bmi.toFixed(1)} <span class="badge ${cls}">${cat}</span></span></div>`);
+}
+
+/* ══════════════════════════════════
+   3. CALORIES BURNED
+══════════════════════════════════ */
+function calcBurn(){
+  const met=parseFloat(document.getElementById('burn-act').value);
+  const d=N('burn-d'),w=N('burn-w');
+  if(!d||!w){empty('burn-res','Fill in all fields');return}
+  const cal=(met*w*3.5/200)*d;
+  html('burn-res',`<div class="rr"><span class="rl2">Calories Burned</span><span class="rv">${Math.round(cal)} kcal</span></div>`);
+}
+
+/* ══════════════════════════════════
+   4. STOPWATCH
+══════════════════════════════════ */
+(function(){
+  let elapsed=0,startT=null,tid=null,running=false;
+  const p2=n=>String(Math.floor(n)).padStart(2,'0');
+  function render(){
+    const ms=Math.floor((elapsed%1000)/10),sec=Math.floor(elapsed/1000)%60,min=Math.floor(elapsed/60000);
+    document.getElementById('sw-disp').textContent=`${p2(min)}:${p2(sec)}:${p2(ms)}`;
+  }
+  function tick(){elapsed=performance.now()-startT;render()}
+  window.swStart=function(){
+    if(running)return;running=true;
+    startT=performance.now()-elapsed;
+    tid=setInterval(tick,10);
+    const b=document.getElementById('swb-start');b.textContent='Running…';b.style.opacity='.6';
+  };
+  window.swPause=function(){
+    if(!running)return;running=false;clearInterval(tid);tid=null;
+    const b=document.getElementById('swb-start');b.textContent='Resume';b.style.opacity='1';
+  };
+  window.swReset=function(){
+    running=false;clearInterval(tid);tid=null;elapsed=0;render();
+    const b=document.getElementById('swb-start');b.textContent='Start';b.style.opacity='1';
+  };
+})();
+
+/* ══════════════════════════════════
+   5. ONE REP MAX
+══════════════════════════════════ */
+function calcORM(){
+  const w=N('orm-w'),r=N('orm-r');
+  if(!w||!r){empty('orm-res','Enter weight and reps');return}
+  const orm=w*(1+r/30);
+  html('orm-res',`<div class="rr"><span class="rl2">Estimated 1RM</span><span class="rv">${orm.toFixed(1)} kg</span></div>`);
+}
+
+/* ══════════════════════════════════
+   6. MACRO NUTRITION CALCULATOR
+══════════════════════════════════ */
+function calcMacro(){
+  const kcal=N('mac-kcal');
+  const bw=N('mac-bw');
+  const goal=document.getElementById('mac-goal').value;
+  const diet=document.getElementById('mac-diet').value;
+  if(!kcal||!bw){html('mac-res','<span class="re" style="font-size:.8rem;font-style:italic;color:var(--muted)">Fill in all fields</span>');return}
+
+  // Protein base g/kg by goal
+  let protPerKg;
+  if(goal==='cut') protPerKg=2.4;
+  else if(goal==='bulk') protPerKg=1.8;
+  else protPerKg=2.0;
+
+  // Diet-specific macro ratios (protein%, carb%, fat%)
+  const ratios={
+    balanced:   {p:0.30, c:0.40, f:0.30},
+    lowcarb:    {p:0.35, c:0.20, f:0.45},
+    carbcycle:  {p:0.33, c:0.37, f:0.30},
+    keto:       {p:0.25, c:0.05, f:0.70},
+    highprot:   {p:0.40, c:0.35, f:0.25}
+  };
+
+  // Goal modifier on ratios
+  let ratio={...ratios[diet]};
+  if(goal==='cut'){
+    // Push more protein, reduce carbs slightly
+    const adj=0.05;
+    ratio.p=Math.min(ratio.p+adj,0.50);
+    ratio.c=Math.max(ratio.c-adj,0.02);
+    ratio.f=1-ratio.p-ratio.c;
+  } else if(goal==='bulk'){
+    const adj=0.04;
+    ratio.c=Math.min(ratio.c+adj,0.60);
+    ratio.p=Math.max(ratio.p-0.02,0.15);
+    ratio.f=1-ratio.p-ratio.c;
+  }
+
+  // Enforce protein minimum based on bodyweight
+  const minProtG=protPerKg*bw;
+  const minProtKcal=minProtG*4;
+  if(minProtKcal/kcal > ratio.p){
+    ratio.p=minProtKcal/kcal;
+    ratio.f=1-ratio.p-ratio.c;
+    if(ratio.f<0.10){ratio.f=0.10;ratio.c=1-ratio.p-ratio.f;}
+  }
+
+  // Normalise
+  const sum=ratio.p+ratio.c+ratio.f;
+  ratio.p/=sum;ratio.c/=sum;ratio.f/=sum;
+
+  const protG=Math.round((kcal*ratio.p)/4);
+  const fatG =Math.round((kcal*ratio.f)/9);
+  const carbG=Math.round((kcal-(protG*4)-(fatG*9))/4);
+  const check=protG*4+carbG*4+fatG*9;
+
+  const goalLabel={cut:'🔻 Cut',maintain:'⚖️ Maintain',bulk:'🔺 Bulk'}[goal];
+  const dietLabel={balanced:'Balanced',lowcarb:'Low Carb',carbcycle:'Carb Cycling',keto:'Keto',highprot:'High Protein'}[diet];
+
+  html('mac-res',`
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <span class="badge b-blue" style="margin:0">${goalLabel}</span>
+      <span class="badge b-purple" style="margin:0">${dietLabel}</span>
+      <span class="badge b-green" style="margin:0">~${check} kcal total</span>
+    </div>
+    <div class="macro-grid">
+      <div class="macro-item">
+        <div class="macro-val">${protG}g</div>
+        <div class="macro-lbl">Protein</div>
+        <div class="macro-kcal">${protG*4} kcal</div>
+      </div>
+      <div class="macro-item">
+        <div class="macro-val">${carbG}g</div>
+        <div class="macro-lbl">Carbs</div>
+        <div class="macro-kcal">${carbG*4} kcal</div>
+      </div>
+      <div class="macro-item">
+        <div class="macro-val">${fatG}g</div>
+        <div class="macro-lbl">Fats</div>
+        <div class="macro-kcal">${fatG*9} kcal</div>
+      </div>
+    </div>`);
+}
+
+/* ══════════════════════════════════
+   7. BODY FAT ESTIMATOR — US Navy
+══════════════════════════════════ */
+let bfGender='male';
+function setBFGender(g){
+  bfGender=g;
+  document.getElementById('bf-gm').classList.toggle('active',g==='male');
+  document.getElementById('bf-gf').classList.toggle('active',g==='female');
+  document.getElementById('bf-hip-row').style.display=g==='female'?'block':'none';
+  calcBF();
+}
+function calcBF(){
+  const waist=N('bf-waist'),neck=N('bf-neck'),ht=N('bf-ht');
+  if(!waist||!neck||!ht||waist<=neck){
+    empty('bf-res','Fill in all fields (waist > neck)');
+    document.getElementById('bf-bar-wrap').style.display='none';
+    return;
+  }
+  let bf;
+  if(bfGender==='male'){
+    bf=495/(1.0324-0.19077*Math.log10(waist-neck)+0.15456*Math.log10(ht))-450;
+  } else {
+    const hip=N('bf-hip');
+    if(!hip){empty('bf-res','Enter hip measurement');document.getElementById('bf-bar-wrap').style.display='none';return}
+    bf=495/(1.29579-0.35004*Math.log10(waist+hip-neck)+0.22100*Math.log10(ht))-450;
+  }
+  bf=Math.max(3,Math.min(50,bf));
+
+  let cat,cls;
+  if(bfGender==='male'){
+    if(bf<10){cat='Athletic';cls='b-blue'}
+    else if(bf<18){cat='Fit';cls='b-green'}
+    else if(bf<25){cat='Average';cls='b-yellow'}
+    else if(bf<32){cat='Overfat';cls='b-orange'}
+    else{cat='Obese';cls='b-red'}
+  } else {
+    if(bf<18){cat='Athletic';cls='b-blue'}
+    else if(bf<25){cat='Fit';cls='b-green'}
+    else if(bf<32){cat='Average';cls='b-yellow'}
+    else if(bf<38){cat='Overfat';cls='b-orange'}
+    else{cat='Obese';cls='b-red'}
+  }
+
+  html('bf-res',`<div class="rr"><span class="rl2">Body Fat %</span><span class="rv">${bf.toFixed(1)}% <span class="badge ${cls}">${cat}</span></span></div>`);
+
+  // Bar: map bf 4–45 → 0–100%
+  const pct=Math.min(100,Math.max(0,(bf-4)/41*100));
+  const bar=document.getElementById('bf-bar');
+  bar.style.width=pct+'%';
+  const hue=pct<35?'linear-gradient(90deg,#00d4ff,#4f6fff)':pct<60?'linear-gradient(90deg,#4f6fff,#ffb400)':'linear-gradient(90deg,#ffb400,#ff4646)';
+  bar.style.background=hue;
+  document.getElementById('bf-bar-wrap').style.display='block';
+}
+
+/* ══════════════════════════════════
+   8. HYDRATION CALCULATOR
+══════════════════════════════════ */
+function calcHydration(){
+  const w=N('hyd-w');
+  if(!w){empty('hyd-res','Enter weight to calculate');return}
+  const actLvl=parseInt(document.getElementById('hyd-act').value);
+  const tempRaw=parseFloat(document.getElementById('hyd-temp').value);
+  const temp=isNaN(tempRaw)?22:tempRaw;
+
+  // Base: 35 ml/kg for low, scaling up
+  const baseMl=[35,38,42,46][actLvl];
+  let totalMl=baseMl*w;
+
+  // Heat adjustment: +2% per °C above 25
+  if(temp>25) totalMl+=totalMl*(temp-25)*0.02;
+
+  const liters=totalMl/1000;
+  const glasses=Math.round(liters/0.25);
+
+  html('hyd-res',`
+    <div class="rr"><span class="rl2">Daily Water</span><span class="rv">${liters.toFixed(2)} L</span></div>
+    <div class="rr"><span class="rl2">Approx. Glasses</span><span class="rv">${glasses} × 250ml</span></div>`);
+}
+
+/* ══════════════════════════════════
+   9. GOAL DECISION ENGINE
+══════════════════════════════════ */
+function calcGDE(){
+  const cw=N('gde-cw'),gw=N('gde-gw'),wk=N('gde-wk');
+  if(!cw||!gw||!wk){html('gde-res','<span class="re" style="font-size:.8rem;font-style:italic;color:var(--muted)">Enter your goal parameters</span>');return}
+
+  const totalDelta=gw-cw; // negative = loss, positive = gain
+  const weeklyDelta=totalDelta/wk;
+  const weeklyPct=Math.abs(weeklyDelta)/cw*100;
+
+  // Required daily calorie delta (~7700 kcal per kg of fat)
+  const dailyKcalDelta=Math.round((weeklyDelta*7700)/7);
+
+  let realistic,realisticCls,strategy,strategyNote,warning='';
+
+  if(totalDelta===0){
+    // Maintenance
+    realistic='Yes'; realisticCls='b-green';
+    strategy='Maintenance Phase';
+    strategyNote='No weight change needed. Focus on performance and body recomposition.';
+  } else if(totalDelta<0){
+    // Fat loss
+    if(weeklyPct>1.5){realistic='Aggressive ⚠️';realisticCls='b-red';warning='Weekly loss exceeds 1.5% BW — risk of muscle loss & metabolic adaptation.';}
+    else if(weeklyPct>1.0){realistic='Possible';realisticCls='b-orange';warning='Weekly loss is aggressive (>1% BW). Monitor energy & performance closely.';}
+    else{realistic='Yes';realisticCls='b-green'}
+
+    if(Math.abs(weeklyDelta)>1.0){strategy='Aggressive Cut';strategyNote='Very high deficit. Use only short-term. Prioritize protein intake.'}
+    else if(Math.abs(weeklyDelta)>0.5){strategy='Moderate Cut';strategyNote='Sustainable fat loss. Maintain strength training and high protein.'}
+    else{strategy='Lean Cut';strategyNote='Conservative deficit. Ideal for preserving muscle during cut.'}
+
+  } else {
+    // Muscle gain
+    if(weeklyDelta>0.5){realistic='Unrealistic';realisticCls='b-red';warning='Natural muscle gain rarely exceeds 0.25 kg/week. Excess will be fat.';}
+    else if(weeklyDelta>0.3){realistic='Aggressive';realisticCls='b-orange';warning='Slightly fast for lean bulk. Risk of excess fat gain.'}
+    else{realistic='Yes';realisticCls='b-green'}
+
+    strategy='Lean Bulk';
+    strategyNote='Moderate calorie surplus. Focus on progressive overload and recovery.';
+  }
+
+  const dailyTarget=Math.round(2200+(dailyKcalDelta)); // rough estimate
+  const direction=totalDelta<0?'🔻 Deficit':'🔺 Surplus';
+
+  html('gde-res',`
+    <div class="rb" style="margin-top:0;margin-bottom:10px">
+      <div class="rr"><span class="rl2">Goal Realistic?</span><span class="rv"><span class="badge ${realisticCls}" style="margin:0">${realistic}</span></span></div>
+      <div class="rr" style="margin-top:6px"><span class="rl2">Weekly Change</span><span class="rv">${weeklyDelta>0?'+':''}${weeklyDelta.toFixed(2)} kg/wk</span></div>
+      <div class="rr"><span class="rl2">Calorie Adj</span><span class="rv">${direction} ~${Math.abs(dailyKcalDelta)} kcal/day</span></div>
+    </div>
+    <div class="strategy-box">
+      <div class="strategy-tag" style="color:var(--blue)">${strategy}</div>
+      <div class="strategy-note">${strategyNote}</div>
+      ${warning?`<div class="strategy-warn">⚠️ ${warning}</div>`:''}
+    </div>`);
+}
+</script>
+</body>
+</html>
