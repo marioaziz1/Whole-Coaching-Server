@@ -236,6 +236,25 @@ width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify
 .lesson-arr{font-size:13px;color:var(--muted);flex-shrink:0;transition:transform .25s,color .25s}
 .lesson-card:hover .lesson-arr{transform:translate(2px,-2px);color:var(--blue)}
 
+/* ── Firebase Sync Status Indicator (minimal, non-breaking) ── */
+#fbSyncStatus {
+  position: fixed; top: 16px; right: 16px; z-index: 8000;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 50px;
+  background: rgba(5,8,16,.82);
+  border: 1px solid rgba(79,111,255,.2);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  font-family: var(--fb); font-size: .68rem; font-weight: 600;
+  color: var(--muted); letter-spacing: .06em; pointer-events: none;
+  transition: opacity .4s;
+}
+.fb-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #ffb400; box-shadow: 0 0 6px #ffb400;
+  transition: background .4s, box-shadow .4s;
+  flex-shrink: 0;
+}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 
 /* ══════════════════════════════════
@@ -484,6 +503,12 @@ width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify
 <canvas id="pcanvas"></canvas>
 <div class="mesh"></div>
 
+<!-- Firebase real-time sync status — fixed badge, non-intrusive -->
+<div id="fbSyncStatus">
+  <span class="fb-dot"></span>
+  <span class="fb-lbl">Connecting…</span>
+</div>
+
 <!-- ══════════ LOCK SCREEN ══════════ -->
 <div id="lockscreen">
   <div class="lock-card">
@@ -717,7 +742,7 @@ width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify
 
         <!-- STEP BUTTONS CONTAINER -->
         <div id="step-buttons-container">
-          <!-- dynamically populated from localStorage -->
+          <!-- dynamically rendered by Firestore onSnapshot -->
         </div>
 
         <!-- ADD STEP BUTTON -->
@@ -732,7 +757,7 @@ width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify
 
         <!-- EXTRA BUTTONS CONTAINER -->
         <div id="extra-buttons-container">
-          <!-- dynamically populated from localStorage -->
+          <!-- dynamically rendered by Firestore onSnapshot -->
         </div>
 
         <!-- ADD EXTRA BUTTON -->
@@ -1218,60 +1243,132 @@ function calcGDE(){
 }
 </script>
 
-<script>
+<!-- ═══════════════════════════════════════════════════════════
+     FIREBASE REAL-TIME SYNC ENGINE
+     Modular SDK v10+ via CDN — isolated, non-destructive
+     Firestore collections: "steps" and "extras"
+     onSnapshot listeners drive all UI renders (no polling)
+════════════════════════════════════════════════════════════ -->
+<script type="module">
+
+/* ── Firebase Init ── */
+import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc,
+         getDocs, setDoc, deleteDoc,
+         onSnapshot, writeBatch,
+         serverTimestamp, query,
+         orderBy }                                from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* Firebase project configuration */
+const firebaseConfig = {
+  apiKey:            "AIzaSyDxuXv0WJpb-QKtq4X0ccfRT5wDGf5byrw",
+  authDomain:        "whole-coaching-server.firebaseapp.com",
+  projectId:         "whole-coaching-server",
+  storageBucket:     "whole-coaching-server.firebasestorage.app",
+  messagingSenderId: "131439787424",
+  appId:             "1:131439787424:web:4f7036ec582a612afa78c5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);   /* Firestore instance — shared across all ops */
+
+/* ── Collection references ── */
+const stepsCol  = collection(db, 'steps');
+const extrasCol = collection(db, 'extras');
+
 /* ══════════════════════════════════════════════════════════
    DYNAMIC BUTTON MANAGEMENT SYSTEM
-   Uses localStorage for persistence. All existing buttons
-   seeded on first load, then fully user-editable.
+   Backend: Firebase Firestore (real-time onSnapshot)
+   Collections: steps / extras
+   Each doc: { id, title, desc, url, icon, order, createdAt }
 ══════════════════════════════════════════════════════════ */
 const DynButtons = (function(){
 
-  /* ─── Storage Keys ─── */
-  const KEYS = {
-    steps: 'dynButtons_steps_v1',
-    extras: 'dynButtons_extras_v1'
-  };
-
-  /* ─── Default seed data (original buttons) ─── */
+  /* ─── Default seed data (original buttons — written to Firestore once) ─── */
   const DEFAULT_STEPS = [
-    { id: 's1', title: 'Coaching Website',  desc: 'Main coaching platform where sessions begin',     url: 'https://marioaziz1.github.io/Coaching-Template/',   icon: '🌐' },
-    { id: 's2', title: 'Form File',          desc: 'Where client submissions and leads are collected', url: 'https://www.jotform.com/tables/241082628095559',    icon: '📋' },
-    { id: 's3', title: 'Coaching Server',    desc: 'Backend / automation / server control',           url: 'https://marioaziz1.github.io/Coaching-Server-/',   icon: '⚙️' },
-    { id: 's4', title: 'Firebase Creation',  desc: 'Database and system control panel',               url: 'https://console.firebase.google.com/u/0/',          icon: '🔥' },
-    { id: 's5', title: 'Client Template',    desc: 'Template used to manage and onboard new clients', url: 'https://github.com/marioaziz1/Coaching-Template',  icon: '📁' }
+    { id: 's1', title: 'Coaching Website',  desc: 'Main coaching platform where sessions begin',     url: 'https://marioaziz1.github.io/Coaching-Template/',  icon: '🌐', order: 1 },
+    { id: 's2', title: 'Form File',          desc: 'Where client submissions and leads are collected', url: 'https://www.jotform.com/tables/241082628095559',   icon: '📋', order: 2 },
+    { id: 's3', title: 'Coaching Server',    desc: 'Backend / automation / server control',           url: 'https://marioaziz1.github.io/Coaching-Server-/',  icon: '⚙️', order: 3 },
+    { id: 's4', title: 'Firebase Creation',  desc: 'Database and system control panel',               url: 'https://console.firebase.google.com/u/0/',         icon: '🔥', order: 4 },
+    { id: 's5', title: 'Client Template',    desc: 'Template used to manage and onboard new clients', url: 'https://github.com/marioaziz1/Coaching-Template', icon: '📁', order: 5 }
   ];
 
   const DEFAULT_EXTRAS = [
-    { id: 'e1', title: 'Meals Books',            desc: 'Healthy nutrition guides',        url: 'https://marioaziz1.github.io/healthy-meals-Book/', icon: '🍽️' },
-    { id: 'e2', title: 'Coaching Example',        desc: 'Live coaching template preview',  url: 'https://marioaziz1.github.io/Coaching-Template/', icon: '🏅' },
-    { id: 'e3', title: 'Coaching Prompt Library', desc: 'Elite prompt collection',         url: 'https://marioaziz1.github.io/prompt-library/',    icon: '📚' }
+    { id: 'e1', title: 'Meals Books',            desc: 'Healthy nutrition guides',       url: 'https://marioaziz1.github.io/healthy-meals-Book/', icon: '🍽️', order: 1 },
+    { id: 'e2', title: 'Coaching Example',        desc: 'Live coaching template preview', url: 'https://marioaziz1.github.io/Coaching-Template/', icon: '🏅', order: 2 },
+    { id: 'e3', title: 'Coaching Prompt Library', desc: 'Elite prompt collection',        url: 'https://marioaziz1.github.io/prompt-library/',   icon: '📚', order: 3 }
   ];
 
   /* ─── Icon options ─── */
   const ICONS = ['🌐','📋','⚙️','🔥','📁','🏅','📚','🍽️','🎯','💪','🧠','📊','🔗','📈','🏆','⚡','💡','🔐','🚀','✅','📧','🗂️','💬','🎓'];
 
   /* ─── State ─── */
-  let adminMode = false;
-  let editingType = null;   // 'step' | 'extra'
-  let editingId = null;     // null = new
-  let selectedIcon = '🌐';
+  let adminMode        = false;
+  let editingType      = null;    // 'step' | 'extra'
+  let editingId        = null;    // null = new
+  let selectedIcon     = '🌐';
   let pendingDeleteType = null;
-  let pendingDeleteId = null;
-  let toastTimer = null;
+  let pendingDeleteId   = null;
+  let toastTimer        = null;
 
-  /* ─── Load / Save ─── */
-  function loadSteps()  { try { return JSON.parse(localStorage.getItem(KEYS.steps))  || null; } catch(e){ return null; } }
-  function loadExtras() { try { return JSON.parse(localStorage.getItem(KEYS.extras)) || null; } catch(e){ return null; } }
-  function saveSteps(d)  { localStorage.setItem(KEYS.steps,  JSON.stringify(d)); }
-  function saveExtras(d) { localStorage.setItem(KEYS.extras, JSON.stringify(d)); }
+  /* ─── Active onSnapshot unsubscribe handles (prevent duplicate listeners) ─── */
+  let unsubSteps  = null;
+  let unsubExtras = null;
 
-  function getSteps()  { return loadSteps()  || JSON.parse(JSON.stringify(DEFAULT_STEPS));  }
-  function getExtras() { return loadExtras() || JSON.parse(JSON.stringify(DEFAULT_EXTRAS)); }
+  /* ─── In-memory cache (populated by onSnapshot — avoids redundant Firestore reads) ─── */
+  let _stepsCache  = [];
+  let _extrasCache = [];
+
+  /* ─── Cache accessors (replaces old getSteps / getExtras localStorage reads) ─── */
+  function getSteps()  { return _stepsCache;  }
+  function getExtras() { return _extrasCache; }
+
+  /* ─── Firestore write helpers ─── */
+
+  /* Write a single document into a collection */
+  async function fsSet(col, id, data) {
+    try {
+      await setDoc(doc(db, col, id), data);
+    } catch(e) {
+      console.error('[DynButtons] fsSet error:', e);
+      showToast('❌ Save failed — check connection', 'error');
+    }
+  }
+
+  /* Delete a single document from a collection */
+  async function fsDel(col, id) {
+    try {
+      await deleteDoc(doc(db, col, id));
+    } catch(e) {
+      console.error('[DynButtons] fsDel error:', e);
+      showToast('❌ Delete failed — check connection', 'error');
+    }
+  }
+
+  /* Seed default data if a collection is empty (runs once on first load) */
+  async function seedIfEmpty(col, defaults) {
+    try {
+      const snap = await getDocs(collection(db, col));
+      if(snap.empty) {
+        /* writeBatch for atomic seed — no partial writes */
+        const batch = writeBatch(db);
+        defaults.forEach(item => {
+          batch.set(doc(db, col, item.id), { ...item, createdAt: serverTimestamp() });
+        });
+        await batch.commit();
+      }
+    } catch(e) {
+      console.error('[DynButtons] seedIfEmpty error:', e);
+    }
+  }
 
   /* ─── UUID ─── */
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
   /* ─── Render ─── */
+  /* NOTE: renderAll/renderSteps/renderExtras are called by onSnapshot callbacks
+     whenever Firestore data changes — this is the real-time update path.
+     They also remain callable directly for immediate UI feedback. */
   function renderAll() {
     renderSteps();
     renderExtras();
@@ -1488,36 +1585,44 @@ const DynButtons = (function(){
 
     if(!valid) return;
 
+    /* Close modal immediately for snappy UX; onSnapshot will re-render */
+    closeModal();
+
     if(editingType === 'step') {
-      const steps = getSteps();
       if(editingId) {
-        const idx = steps.findIndex(x => x.id === editingId);
-        if(idx > -1) { steps[idx] = { ...steps[idx], title, desc, url }; }
+        /* UPDATE existing step doc — merge only changed fields */
+        const existing = _stepsCache.find(x => x.id === editingId) || {};
+        fsSet('steps', editingId, { ...existing, title, desc, url, updatedAt: serverTimestamp() });
       } else {
-        steps.push({ id: uid(), title, desc, url, icon: selectedIcon });
+        /* ADD new step doc — assign next order value */
+        const newId   = uid();
+        const maxOrder = _stepsCache.reduce((m, x) => Math.max(m, x.order||0), 0);
+        fsSet('steps', newId, { id: newId, title, desc, url, icon: selectedIcon, order: maxOrder + 1, createdAt: serverTimestamp() });
       }
-      saveSteps(steps);
-      renderSteps();
     } else {
-      const extras = getExtras();
       if(editingId) {
-        const idx = extras.findIndex(x => x.id === editingId);
-        if(idx > -1) { extras[idx] = { ...extras[idx], title, desc, url, icon: selectedIcon }; }
+        /* UPDATE existing extra doc */
+        const existing = _extrasCache.find(x => x.id === editingId) || {};
+        fsSet('extras', editingId, { ...existing, title, desc, url, icon: selectedIcon, updatedAt: serverTimestamp() });
       } else {
-        extras.push({ id: uid(), title, desc, url, icon: selectedIcon });
+        /* ADD new extra doc */
+        const newId   = uid();
+        const maxOrder = _extrasCache.reduce((m, x) => Math.max(m, x.order||0), 0);
+        fsSet('extras', newId, { id: newId, title, desc, url, icon: selectedIcon, order: maxOrder + 1, createdAt: serverTimestamp() });
       }
-      saveExtras(extras);
-      renderExtras();
     }
 
-    closeModal();
     showToast(editingId ? '✅ Button updated!' : '✅ Button added!', 'success');
 
-    // Animate newest entry
+    /* Entry animation — applied after onSnapshot triggers re-render (~100ms) */
     if(!editingId) {
-      const container = document.getElementById(editingType === 'step' ? 'step-buttons-container' : 'extra-buttons-container');
-      const last = container.lastElementChild;
-      if(last) { last.classList.add('new-entry'); setTimeout(()=>last.classList.remove('new-entry'), 600); }
+      setTimeout(() => {
+        const container = document.getElementById(editingType === 'step' ? 'step-buttons-container' : 'extra-buttons-container');
+        if(container) {
+          const last = container.lastElementChild;
+          if(last) { last.classList.add('new-entry'); setTimeout(()=>last.classList.remove('new-entry'), 600); }
+        }
+      }, 200);
     }
   }
 
@@ -1536,14 +1641,11 @@ const DynButtons = (function(){
   }
 
   function confirmDelete() {
+    /* Delete from Firestore — onSnapshot will re-render automatically */
     if(pendingDeleteType === 'step') {
-      const steps = getSteps().filter(x => x.id !== pendingDeleteId);
-      saveSteps(steps);
-      renderSteps();
+      fsDel('steps', pendingDeleteId);
     } else {
-      const extras = getExtras().filter(x => x.id !== pendingDeleteId);
-      saveExtras(extras);
-      renderExtras();
+      fsDel('extras', pendingDeleteId);
     }
     cancelDelete();
     showToast('🗑️ Button deleted', 'error');
@@ -1583,24 +1685,85 @@ const DynButtons = (function(){
   });
 
   /* ─── Init ─── */
-  function init() {
-    // Seed default data if localStorage is empty
-    if(!loadSteps())  saveSteps(DEFAULT_STEPS);
-    if(!loadExtras()) saveExtras(DEFAULT_EXTRAS);
-    renderAll();
+  /* ─── Real-time Firestore listeners ───
+     onSnapshot fires immediately with current data AND on every remote change.
+     Unsubscribe handles prevent duplicate listeners if init() is ever called again. */
+  function attachListeners() {
+    /* Tear down any existing listeners first */
+    if(unsubSteps)  { unsubSteps();  unsubSteps  = null; }
+    if(unsubExtras) { unsubExtras(); unsubExtras = null; }
+
+    /* Steps listener — ordered by 'order' field */
+    unsubSteps = onSnapshot(
+      query(stepsCol, orderBy('order', 'asc')),
+      (snap) => {
+        _stepsCache = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        renderSteps();
+        setSyncStatus('connected');
+      },
+      (err) => {
+        console.error('[DynButtons] steps onSnapshot error:', err);
+        setSyncStatus('error');
+      }
+    );
+
+    /* Extras listener — ordered by 'order' field */
+    unsubExtras = onSnapshot(
+      query(extrasCol, orderBy('order', 'asc')),
+      (snap) => {
+        _extrasCache = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        renderExtras();
+        setSyncStatus('connected');
+      },
+      (err) => {
+        console.error('[DynButtons] extras onSnapshot error:', err);
+        setSyncStatus('error');
+      }
+    );
   }
 
-  // Auto-init after DOM is ready
+  /* ─── Sync status indicator ───
+     Updates the minimal status badge in the header (added safely, no layout change) */
+  function setSyncStatus(status) {
+    const el = document.getElementById('fbSyncStatus');
+    if(!el) return;
+    const map = {
+      connecting: { dot: '#ffb400', label: 'Connecting…' },
+      connected:  { dot: '#00dc78', label: 'Live'        },
+      syncing:    { dot: '#4f6fff', label: 'Syncing…'    },
+      error:      { dot: '#ff4646', label: 'Offline'     }
+    };
+    const s = map[status] || map.connecting;
+    el.querySelector('.fb-dot').style.background = s.dot;
+    el.querySelector('.fb-dot').style.boxShadow  = `0 0 6px ${s.dot}`;
+    el.querySelector('.fb-lbl').textContent       = s.label;
+  }
+
+  /* ─── Init ─── */
+  async function init() {
+    setSyncStatus('connecting');
+    /* Seed defaults into Firestore if collections are empty */
+    await seedIfEmpty('steps',  DEFAULT_STEPS);
+    await seedIfEmpty('extras', DEFAULT_EXTRAS);
+    /* Attach live listeners — they drive all rendering from here on */
+    attachListeners();
+  }
+
+  /* Auto-init after DOM is ready */
   if(document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 
-  /* ─── Public API ─── */
+  /* ─── Public API (unchanged — all onclick handlers in HTML reference these) ─── */
   return { toggleAdmin, openAddModal, openEditModal, closeModal, saveModal, askDelete, cancelDelete, confirmDelete };
 
 })();
+
+/* Expose DynButtons globally so inline onclick attributes (in non-module scope) can reach it */
+window.DynButtons = DynButtons;
+
 </script>
 </body>
 </html>
