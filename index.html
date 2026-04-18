@@ -206,8 +206,6 @@ select option{background:#0d1225;color:var(--text)}
 .cta-2:hover{box-shadow:0 6px 28px rgba(0,212,255,.2);border-color:rgba(0,212,255,.6)}
 .cta-3{background:linear-gradient(135deg,rgba(162,89,255,.14),rgba(255,107,157,.14));color:var(--text);border:1px solid rgba(162,89,255,.3)}
 .cta-3:hover{box-shadow:0 6px 28px rgba(162,89,255,.2);border-color:rgba(162,89,255,.6)}
-.cta-form{background:linear-gradient(135deg,rgba(0,212,255,.16),rgba(79,111,255,.16));color:var(--text);border:1px solid rgba(0,212,255,.32)}
-.cta-form:hover{box-shadow:0 6px 28px rgba(0,212,255,.24);border-color:rgba(0,212,255,.68)}
 .cta-meals{background:linear-gradient(135deg,rgba(255,180,0,.14),rgba(255,120,0,.14));color:var(--text);border:1px solid rgba(255,180,0,.3)}
 .cta-meals:hover{box-shadow:0 6px 28px rgba(255,180,0,.22);border-color:rgba(255,180,0,.65)}
 .cta-4{background:linear-gradient(135deg,rgba(0,220,120,.14),rgba(0,180,255,.14));color:var(--text);border:1px solid rgba(0,220,120,.3)}
@@ -430,42 +428,118 @@ width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify
 
     <!-- ════ RIGHT ════ -->
     <div class="coaching-panel">
+      <style>
+        /* ── COACHING FLOW STEPS ── */
+        .flow-label{font-family:var(--fh);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);margin-bottom:6px}
+        .flow-heading{font-family:var(--fh);font-size:1.35rem;font-weight:800;margin-bottom:18px;background:linear-gradient(135deg,#fff 40%,var(--blue) 80%,var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .step-number{font-family:var(--fh);font-size:.6rem;font-weight:800;letter-spacing:.1em;color:#fff;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:7px;padding:4px 8px;flex-shrink:0;box-shadow:0 4px 14px rgba(79,111,255,.35)}
+        .step-content{flex:1;min-width:0}
+        .step-title{font-family:var(--fh);font-size:.88rem;font-weight:700;margin-bottom:2px;color:var(--text)}
+        .step-desc{font-size:.71rem;color:var(--muted);line-height:1.45}
+        .flow-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(79,111,255,.3),rgba(162,89,255,.25),transparent);margin:20px 0}
+        .extra-label{font-family:var(--fh);font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+        /* step-card shares cta-btn base, adds step-specific overrides */
+        a.step-card{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:13px;margin-bottom:9px;text-decoration:none;color:var(--text);background:rgba(255,255,255,.04);border:1px solid rgba(100,120,255,.2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .3s cubic-bezier(.16,1,.3,1),border-color .3s,box-shadow .3s;position:relative;overflow:hidden}
+        a.step-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(79,111,255,.08),rgba(162,89,255,.06));opacity:0;transition:opacity .25s}
+        a.step-card:hover::before{opacity:1}
+        a.step-card:hover{transform:translateY(-3px);border-color:rgba(79,111,255,.5);box-shadow:0 10px 32px rgba(79,111,255,.18)}
+        a.step-card:active{transform:scale(.97)}
+        a.step-card.step-01{background:linear-gradient(135deg,rgba(79,111,255,.12),rgba(162,89,255,.07));border-color:rgba(79,111,255,.38)}
+        a.step-card.step-01:hover{border-color:rgba(79,111,255,.7);box-shadow:0 12px 40px rgba(79,111,255,.28)}
+        .step-arr{font-size:13px;opacity:.45;margin-left:auto;flex-shrink:0}
+        /* extra resources */
+        .extra-btn{display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;border-radius:11px;border:none;text-decoration:none;margin-bottom:9px;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;position:relative;overflow:hidden;color:var(--text)}
+        .extra-btn::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.06);opacity:0;transition:opacity .25s}
+        .extra-btn:hover::before{opacity:1}
+        .extra-btn:hover{transform:translateY(-2px)}
+        .extra-btn:last-of-type{margin-bottom:0}
+        .extra-meals{background:linear-gradient(135deg,rgba(255,180,0,.14),rgba(255,120,0,.12));border:1px solid rgba(255,180,0,.28)}
+        .extra-meals:hover{box-shadow:0 8px 28px rgba(255,180,0,.2);border-color:rgba(255,180,0,.55)}
+        .extra-prompt{background:linear-gradient(135deg,rgba(0,212,255,.12),rgba(79,111,255,.12));border:1px solid rgba(0,212,255,.25)}
+        .extra-prompt:hover{box-shadow:0 8px 28px rgba(0,212,255,.18);border-color:rgba(0,212,255,.55)}
+        .extra-example{background:linear-gradient(135deg,rgba(0,220,120,.12),rgba(0,180,255,.1));border:1px solid rgba(0,220,120,.25)}
+        .extra-example:hover{box-shadow:0 8px 28px rgba(0,220,120,.18);border-color:rgba(0,220,120,.55)}
+        .extra-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,.1)}
+        .extra-txt{flex:1}.extra-txt strong{display:block;font-size:.84rem}.extra-txt span{font-size:.68rem;opacity:.55}
+        .extra-arr{font-size:13px;opacity:.5}
+      </style>
+
       <div class="coaching-card">
         <div class="coach-avatar">🎯</div>
-        <div class="sec-label">Your Coach</div>
-        <h2>Let's Start Coaching</h2>
-        <p>Access Mario Aziz's elite coaching resources — curated systems, prompts, and portals built for peak performance.</p>
+        <div class="flow-label">Coaching Flow</div>
+        <div class="flow-heading">Let's Start Coaching</div>
 
-        <a href="https://marioaziz1.github.io/Coaching-Server-/" target="_blank" rel="noopener" class="cta-btn cta-1">
-          <div class="cta-ic">🚀</div>
-          <div class="cta-txt"><strong>Mario Aziz Coaching Server</strong><span>Full coaching ecosystem</span></div>
-          <div class="cta-arr">↗</div>
-        </a>
-        <a href="https://www.jotform.com/tables/241082628095559" target="_blank" rel="noopener" class="cta-btn cta-form">
-          <div class="cta-ic">🗂️</div>
-          <div class="cta-txt"><strong>Form Files</strong><span>Client forms & data records</span></div>
-          <div class="cta-arr">↗</div>
-        </a>
-        <a href="https://marioaziz1.github.io/healthy-meals-Book/" target="_blank" rel="noopener" class="cta-btn cta-meals">
-          <div class="cta-ic">🍽️</div>
-          <div class="cta-txt"><strong>Meals Books</strong><span>Healthy nutrition guides</span></div>
-          <div class="cta-arr">↗</div>
-        </a>
-        <a href="https://marioaziz1.github.io/prompt-library/" target="_blank" rel="noopener" class="cta-btn cta-2">
-          <div class="cta-ic">📚</div>
-          <div class="cta-txt"><strong>Coaching Prompt Library</strong><span>Elite prompt collection</span></div>
-          <div class="cta-arr">↗</div>
-        </a>
-        <a href="https://claude.ai/share/e81fb53b-a5a6-4529-bb7d-8e8426b0087e" target="_blank" rel="noopener" class="cta-btn cta-3">
-          <div class="cta-ic">⚙️</div>
-          <div class="cta-txt"><strong>Portal Creation</strong><span>Build your coaching portal</span></div>
-          <div class="cta-arr">↗</div>
+        <!-- STEP 01 -->
+        <a href="https://marioaziz1.github.io/Coaching-Template/" target="_blank" rel="noopener" class="step-card step-01">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <div class="step-title">Coaching Website</div>
+            <div class="step-desc">Main coaching platform where sessions begin</div>
+          </div>
+          <div class="step-arr">↗</div>
         </a>
 
-        <a href="https://marioaziz1.github.io/Coaching-EX/" target="_blank" rel="noopener" class="cta-btn cta-4">
-          <div class="cta-ic">🏅</div>
-          <div class="cta-txt"><strong>EX Client</strong><span>Past client results & cases</span></div>
-          <div class="cta-arr">↗</div>
+        <!-- STEP 02 -->
+        <a href="https://www.jotform.com/tables/241082628095559" target="_blank" rel="noopener" class="step-card">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <div class="step-title">Form File</div>
+            <div class="step-desc">Where client submissions and leads are collected</div>
+          </div>
+          <div class="step-arr">↗</div>
+        </a>
+
+        <!-- STEP 03 -->
+        <a href="https://marioaziz1.github.io/Coaching-Server-/" target="_blank" rel="noopener" class="step-card">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <div class="step-title">Coaching Server</div>
+            <div class="step-desc">Backend / automation / server control</div>
+          </div>
+          <div class="step-arr">↗</div>
+        </a>
+
+        <!-- STEP 04 -->
+        <a href="https://console.firebase.google.com/u/0/" target="_blank" rel="noopener" class="step-card">
+          <div class="step-number">04</div>
+          <div class="step-content">
+            <div class="step-title">Firebase Creation</div>
+            <div class="step-desc">Database and system control panel</div>
+          </div>
+          <div class="step-arr">↗</div>
+        </a>
+
+        <!-- STEP 05 -->
+        <a href="https://github.com/marioaziz1/Coaching-Template" target="_blank" rel="noopener" class="step-card">
+          <div class="step-number">05</div>
+          <div class="step-content">
+            <div class="step-title">Client Template</div>
+            <div class="step-desc">Template used to manage and onboard new clients</div>
+          </div>
+          <div class="step-arr">↗</div>
+        </a>
+
+        <div class="flow-divider"></div>
+
+        <!-- EXTRA RESOURCES -->
+        <div class="extra-label">Extra Resources</div>
+
+        <a href="https://marioaziz1.github.io/healthy-meals-Book/" target="_blank" rel="noopener" class="extra-btn extra-meals">
+          <div class="extra-ic">🍽️</div>
+          <div class="extra-txt"><strong>Meals Books</strong><span>Healthy nutrition guides</span></div>
+          <div class="extra-arr">↗</div>
+        </a>
+
+        <a href="https://marioaziz1.github.io/Coaching-Template/" target="_blank" rel="noopener" class="extra-btn extra-example">
+          <div class="extra-ic">🏅</div>
+          <div class="extra-txt"><strong>Coaching Example</strong><span>Live coaching template preview</span></div>
+          <div class="extra-arr">↗</div>
+        </a>
+
+        <a href="https://marioaziz1.github.io/prompt-library/" target="_blank" rel="noopener" class="extra-btn extra-prompt">
+          <div class="extra-ic">📚</div>
+          <div class="extra-txt"><strong>Coaching Prompt Library</strong><span>Elite prompt collection</span></div>
+          <div class="extra-arr">↗</div>
         </a>
 
         <div class="divider"></div>
@@ -475,6 +549,8 @@ width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify
           <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Free</div></div>
         </div>
       </div>
+
+
     </div>
 
   </div><!-- /main-grid -->
